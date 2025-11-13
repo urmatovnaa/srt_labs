@@ -6,11 +6,11 @@
 void runWarmup();
 
 int main() {
-    // runWarmup();
-    // std::cout << std::endl;
+    runWarmup();
+    std::cout << std::endl;
     
-    // runExercise2();
-    // std::cout << std::endl;
+    runExercise2();
+    std::cout << std::endl;
     
     runExercise3();
     
