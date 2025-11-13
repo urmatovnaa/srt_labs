@@ -14,8 +14,9 @@ mkdir build && cd build
 cmake ..               
 make                   
 ./labX                 
-
-Режимы сборки
+```
+**Режимы сборки**
+```bash
 # Debug режим (отладка)
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
@@ -24,3 +25,4 @@ make
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ./lab1_release
+```
