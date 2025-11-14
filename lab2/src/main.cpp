@@ -14,10 +14,7 @@ void Func(std::string name) {
     }
     
     m.lock();
-    std::cout << name;
-    std::cout << ": ";
-    std::cout << i;
-    std::cout << std::endl;   
+    std::cout << name << ": " << i << std::endl;   
     m.unlock();
 }
 
