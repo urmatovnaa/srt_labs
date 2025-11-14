@@ -3,7 +3,7 @@
 #include <mutex>
 #include <chrono>
 
-// std::mutex m;
+std::mutex m;
 
 void Func(std::string name) {
     long double i = 0;
@@ -13,12 +13,12 @@ void Func(std::string name) {
         i += 1e-9L;  // 10^(-9)
     }
     
-    // m.lock();
+    m.lock();
     std::cout << name;
     std::cout << ": ";
     std::cout << i;
     std::cout << std::endl;   
-     // m.unlock();
+    m.unlock();
 }
 
 int main() {
