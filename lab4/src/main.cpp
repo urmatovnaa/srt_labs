@@ -1,0 +1,129 @@
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include <atomic>
+
+std::mutex m;
+std::atomic<bool> cook_finished(false);
+std::atomic<bool> cook_fired(false);
+std::atomic<bool> all_fatmen_burst(false);
+
+// Тарелки
+int dish1 = 3000;
+int dish2 = 3000; 
+int dish3 = 3000;
+
+// Съедено каждым толстяком
+int fatman1_eaten = 0;
+int fatman2_eaten = 0;
+int fatman3_eaten = 0;
+
+const int gluttony = 15;          //1    10
+const int efficiency_factor = 10;  //10   90
+
+void fatman(int fatman_id, int& dish, int& eaten) {
+    auto start = std::chrono::steady_clock::now();
+    
+    while (std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
+        if (cook_fired || all_fatmen_burst) {
+            break;
+        }
+        
+        m.lock();
+        
+        if (eaten >= 10000) {
+            std::cout << "Толстяк " << fatman_id << " лопнул! Съел: " << eaten << std::endl;
+            m.unlock();
+            break;
+        }
+        
+        if (dish >= gluttony) {
+            dish -= gluttony;
+            eaten += gluttony;
+            std::cout << "Толстяк " << fatman_id << " съел " << gluttony 
+                      << ". Осталось: " << dish << ", Всего съел: " << eaten << std::endl;
+        }
+        else if (dish < gluttony && !cook_fired) {
+            std::cout << "!!! Толстяк " << fatman_id << " остался без еды! Кук уволен !!!" << std::endl;
+            cook_fired = true;
+            cook_finished = true;
+            m.unlock();
+            return;
+        }
+        
+        m.unlock();
+        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    
+    if (!cook_fired && !all_fatmen_burst) {
+        std::cout << "Толстяк " << fatman_id << " закончил. Итого съел: " << eaten << std::endl;
+    }
+}
+
+void cook() {
+    auto start = std::chrono::steady_clock::now();
+    
+    while (std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
+        if (cook_fired || all_fatmen_burst) {
+            return;
+        }
+        
+        m.lock();
+        
+        dish1 += efficiency_factor;
+        dish2 += efficiency_factor;
+        dish3 += efficiency_factor;
+        
+        std::cout << "Кук добавил по " << efficiency_factor << " наггетсов. " 
+                  << "Тарелки: " << dish1 << ", " << dish2 << ", " << dish3 << std::endl;
+        
+        m.unlock();
+        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    
+    if (!cook_fired && !all_fatmen_burst) {
+        cook_finished = true;
+    }
+}
+
+int main() {
+    std::cout << "Коэффициенты: gluttony=" << gluttony << ", efficiency=" << efficiency_factor << std::endl;
+    std::cout << "Начальное количество: 3000 наггетсов в каждой тарелке" << std::endl;
+    
+    std::thread cook_thread(cook);
+    std::thread fatman1_thread(fatman, 1, std::ref(dish1), std::ref(fatman1_eaten));
+    std::thread fatman2_thread(fatman, 2, std::ref(dish2), std::ref(fatman2_eaten));
+    std::thread fatman3_thread(fatman, 3, std::ref(dish3), std::ref(fatman3_eaten));
+     
+    fatman1_thread.join();
+    fatman2_thread.join();
+    fatman3_thread.join();
+    
+    if (fatman1_eaten >= 10000 && fatman2_eaten >= 10000 && fatman3_eaten >= 10000) {
+        all_fatmen_burst = true;
+    }
+    
+    cook_thread.join();
+    
+    std::cout << "\nИтоги:" << std::endl;
+    std::cout << "Толстяк 1 съел: " << fatman1_eaten << std::endl;
+    std::cout << "Толстяк 2 съел: " << fatman2_eaten << std::endl;
+    std::cout << "Толстяк 3 съел: " << fatman3_eaten << std::endl;
+    std::cout << "Осталось в тарелках: " << dish1 << ", " << dish2 << ", " << dish3 << std::endl;
+    
+    std::cout << "Результат:";
+    if (cook_fired) {
+        std::cout << "1) Кука уволили" << std::endl;
+    }
+    else if (all_fatmen_burst) {
+        std::cout << "2) Кук не получил зарплату (все толстяки лопнули)" << std::endl;
+    }
+    else {
+        std::cout << "3) Кук уволился сам" << std::endl;
+    }
+    
+    return 0;
+}
