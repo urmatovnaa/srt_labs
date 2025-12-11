@@ -19,8 +19,8 @@ int fatman1_eaten = 0;
 int fatman2_eaten = 0;
 int fatman3_eaten = 0;
 
-const int gluttony = 1;          //15    10
-const int efficiency_factor = 3;  //10   90
+const int gluttony = 10;          //30    90
+const int efficiency_factor = 30;  //10   100
 
 //флаги для проверок
 std::atomic<bool> time_to_eat(true);
