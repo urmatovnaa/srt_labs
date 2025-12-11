@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra CMakeFiles/udp_client.dir/UDPClient.cpp.o -o bin/udp_client 

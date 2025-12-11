@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra CMakeFiles/udp_server.dir/UDPServer.cpp.o -o bin/udp_server 
