@@ -35,14 +35,20 @@ int fatman1_eaten = 0;
 int fatman2_eaten = 0;
 int fatman3_eaten = 0;
 
-const int gluttony = 15;          //1    10
-const int efficiency_factor = 10;  //10   90
+const int gluttony = 10;          //30    90
+const int efficiency_factor = 30;  //10   100
 
-void fatman(int fatman_id, int& dish, int& eaten) {
-    auto start = std::chrono::steady_clock::now();
-    
-    while (std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
-        if (cook_fired || all_fatmen_burst) {
+//флаги для проверок
+std::atomic<bool> time_to_eat(true);
+std::atomic<bool> time_to_cook(false);
+std::atomic<int> fatmans_ate[3]{};
+
+void fatman(int fatman_id, int& dish, int& eaten) {    
+    while (!cook_fired && !all_fatmen_burst && !cook_finished) {
+        while ((!time_to_eat || fatmans_ate[fatman_id - 1]) && !cook_fired && !all_fatmen_burst && !cook_finished) {
+            std::this_thread::yield();
+        }
+        if (cook_fired || all_fatmen_burst || cook_finished) {
             break;
         }
         
@@ -57,6 +63,7 @@ void fatman(int fatman_id, int& dish, int& eaten) {
         if (dish >= gluttony) {
             dish -= gluttony;
             eaten += gluttony;
+            fatmans_ate[fatman_id - 1] = true;
             std::cout << "Толстяк " << fatman_id << " съел " << gluttony 
                       << ". Осталось: " << dish << ", Всего съел: " << eaten << std::endl;
         }
@@ -65,43 +72,66 @@ void fatman(int fatman_id, int& dish, int& eaten) {
             cook_fired = true;
             cook_finished = true;
             m.unlock();
-            return;
+            break;
         }
-        
+
+        if (fatmans_ate[0] and fatmans_ate[1] and fatmans_ate[2]){
+            time_to_cook = true;
+            time_to_eat = false;
+        }
         m.unlock();
-        std::this_thread::yield();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        while ((time_to_cook or fatmans_ate[fatman_id - 1]) && !cook_fired && !all_fatmen_burst && !cook_finished) {
+            std::this_thread::yield();
+        }
     }
-    
+    m.lock();
     if (!cook_fired && !all_fatmen_burst) {
         std::cout << "Толстяк " << fatman_id << " закончил. Итого съел: " << eaten << std::endl;
     }
+    m.unlock();
 }
 
 void cook() {
     auto start = std::chrono::steady_clock::now();
     
-    while (std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
-        if (cook_fired || all_fatmen_burst) {
-            return;
+    while (!cook_fired && !all_fatmen_burst) {
+        if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(5)) {
+            cook_finished = true;
+            break;
         }
-        
+        while (!time_to_cook && !cook_fired && !all_fatmen_burst) {
+            if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(5)) {
+                cook_finished = true;
+                break;
+            }
+            std::this_thread::yield();
+        }
+        if (cook_fired || all_fatmen_burst || cook_finished) {
+            break;
+        }
         m.lock();
         
         dish1 += efficiency_factor;
         dish2 += efficiency_factor;
         dish3 += efficiency_factor;
-        
+
+        time_to_cook = false;
+        time_to_eat = true;
+
+        for (int i = 0; i < 3; ++i) {
+            fatmans_ate[i] = false;
+        }        
         std::cout << "Кук добавил по " << efficiency_factor << " наггетсов. " 
                   << "Тарелки: " << dish1 << ", " << dish2 << ", " << dish3 << std::endl;
         
         m.unlock();
-        std::this_thread::yield();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
     if (!cook_fired && !all_fatmen_burst) {
         cook_finished = true;
+        return;
     }
 }
 
