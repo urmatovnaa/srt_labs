@@ -1,0 +1,4 @@
+/home/lenovo/Рабочий стол/srt_labs/lab7/lab_tcp/build/CMakeFiles/tcp_client.dir
+/home/lenovo/Рабочий стол/srt_labs/lab7/lab_tcp/build/CMakeFiles/tcp_server.dir
+/home/lenovo/Рабочий стол/srt_labs/lab7/lab_tcp/build/CMakeFiles/edit_cache.dir
+/home/lenovo/Рабочий стол/srt_labs/lab7/lab_tcp/build/CMakeFiles/rebuild_cache.dir
